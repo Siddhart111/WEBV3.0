@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#04010a" />
+<title>Campus Chat — Talk anonymously. Connect your campus.</title>
+<meta name="description" content="Campus Chat — the student-only network. Talk anonymously, make friends, and connect your campus. Now in beta v2.0." />
+<meta property="og:title" content="Campus Chat" />
+<meta property="og:description" content="Talk anonymously. Make friends. Connect your campus." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --bg:#04010a;
+    --magenta:#e05cff;
+    --purple:#a855f7;
+    --violet:#7c3aed;
+    --indigo:#6d3bff;
+    --line:rgba(168,85,247,.16);
+    --text:#f2ecff;
+    --muted:#a99fce;
+    --muted-2:#786ba0;
+    --fd:'Space Grotesk',system-ui,sans-serif;
+    --fw:'Orbitron','Space Grotesk',sans-serif;
+    --fb:'Inter',system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{font-family:var(--fb);background:var(--bg);color:var(--text);
+    overflow-x:hidden;line-height:1.6;-webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(168,85,247,.4);color:#fff}
+  a{color:inherit}
+
+  #gl{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;
+    opacity:0;transition:opacity 1.2s ease}
+  #gl.ready{opacity:1}
+  .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 40%,transparent 45%,rgba(2,0,8,.55) 100%)}
+  .cursor-glow{position:fixed;width:520px;height:520px;border-radius:50%;z-index:1;
+    pointer-events:none;transform:translate(-50%,-50%);opacity:.5;mix-blend-mode:screen;
+    background:radial-gradient(circle,rgba(168,85,247,.16),transparent 60%);transition:opacity .4s}
+
+  .content{position:relative;z-index:3}
+  .wrap{width:min(1120px,92vw);margin-inline:auto}
+  .eyebrow{font-family:var(--fd);font-size:.72rem;letter-spacing:.34em;
+    text-transform:uppercase;color:var(--purple);font-weight:600}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:20;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:1rem clamp(1rem,4vw,2.4rem);
+    transition:background .4s ease,backdrop-filter .4s ease,border-color .4s;
+    border-bottom:1px solid transparent}
+  nav.scrolled{background:rgba(6,2,14,.6);backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line)}
+  nav .brand{display:flex;align-items:center;gap:.6rem;font-family:var(--fw);
+    font-weight:700;letter-spacing:.02em;font-size:.92rem}
+  nav .brand svg{width:26px;height:26px;overflow:visible}
+  nav .brand .tag{font-size:.6rem;letter-spacing:.2em;color:var(--purple);
+    border:1px solid rgba(168,85,247,.4);padding:.15rem .45rem;border-radius:6px}
+  nav .nav-dl{font-family:var(--fd);font-weight:600;font-size:.85rem;text-decoration:none;
+    padding:.6rem 1.2rem;border-radius:100px;color:#fff;
+    background:linear-gradient(105deg,var(--magenta),var(--indigo));
+    box-shadow:0 8px 24px -8px rgba(168,85,247,.7);opacity:0;transform:translateY(-6px);
+    pointer-events:none;transition:opacity .4s,transform .4s,box-shadow .3s}
+  nav.scrolled .nav-dl{opacity:1;transform:none;pointer-events:auto}
+  nav .nav-dl:hover{box-shadow:0 10px 30px -6px rgba(168,85,247,.9)}
+
+  .cta{display:inline-flex;align-items:center;gap:.6rem;font-family:var(--fd);
+    font-weight:600;font-size:1.02rem;color:#fff;text-decoration:none;
+    padding:1.05rem 2.1rem;border-radius:100px;position:relative;overflow:hidden;isolation:isolate;
+    background:linear-gradient(105deg,var(--magenta),var(--violet) 55%,var(--indigo));
+    box-shadow:0 0 0 1px rgba(255,255,255,.09) inset,0 16px 44px -10px rgba(168,85,247,.75),
+      0 0 70px -14px rgba(210,75,255,.55);
+    transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s}
+  .cta::after{content:"";position:absolute;inset:0;z-index:-1;
+    background:linear-gradient(105deg,#fff3,transparent 42%);
+    transform:translateX(-120%);transition:transform .65s ease}
+  .cta:hover{transform:translateY(-3px) scale(1.02);
+    box-shadow:0 0 0 1px rgba(255,255,255,.16) inset,0 24px 66px -10px rgba(168,85,247,.9),
+      0 0 100px -10px rgba(210,75,255,.75)}
+  .cta:hover::after{transform:translateX(120%)}
+  .cta:active{transform:translateY(-1px) scale(.99)}
+  .cta svg{width:20px;height:20px}
+
+  .hero{min-height:100svh;min-height:100vh;display:flex;flex-direction:column;
+    align-items:center;text-align:center;padding:0 1.2rem 3rem;position:relative}
+  .logo-space{height:46vh;min-height:300px;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;position:relative;width:100%}
+  .fallback-logo{width:min(230px,52vw);display:none;filter:drop-shadow(0 0 34px rgba(168,85,247,.5))}
+  body.no3d .fallback-logo{display:block}
+  .fallback-logo svg{width:100%;height:auto;overflow:visible}
+
+  .beta-pill{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--fd);
+    font-size:.7rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#ecdcff;
+    padding:.42rem 1rem;border-radius:100px;background:rgba(168,85,247,.1);
+    border:1px solid rgba(168,85,247,.35);backdrop-filter:blur(8px);
+    opacity:0;transform:translateY(10px);animation:fadeUp .8s 1.8s ease forwards}
+  .beta-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--magenta);
+    box-shadow:0 0 10px 2px var(--magenta);animation:blink 2.4s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .wordmark{font-family:var(--fw);font-weight:800;
+    font-size:clamp(2.1rem,9vw,5.2rem);letter-spacing:.01em;line-height:1.04;margin-top:1.5rem;
+    display:flex;flex-direction:column;
+    filter:drop-shadow(0 0 16px rgba(206,120,255,.5)) drop-shadow(0 0 44px rgba(124,58,237,.4))}
+  .wordmark span{overflow:hidden;display:block;padding:.04em 0}
+  .wordmark b{display:block;font-weight:800;transform:translateY(115%);opacity:0;
+    color:#fff;background:linear-gradient(180deg,#ffffff 0%,#f3ccff 34%,#cf86ff 68%,#a557f5 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .wordmark .l1 b{animation:rise .95s 1.35s cubic-bezier(.16,1,.3,1) forwards}
+  .wordmark .l2 b{animation:rise .95s 1.5s cubic-bezier(.16,1,.3,1) forwards}
+  @keyframes rise{to{transform:translateY(0);opacity:1}}
+
+  .tagline{margin-top:1.4rem;font-size:clamp(1rem,2.7vw,1.32rem);color:var(--muted);
+    max-width:34ch;opacity:0;transform:translateY(12px);animation:fadeUp .8s 1.95s ease forwards}
+  .tagline .hl{color:#ecdcff;font-weight:500}
+  .hero-cta{margin-top:2.3rem;opacity:0;transform:translateY(12px);animation:fadeUp .8s 2.15s ease forwards}
+  .cta-meta{margin-top:.85rem;font-size:.82rem;color:var(--muted-2);font-family:var(--fd);
+    letter-spacing:.05em;opacity:0;transform:translateY(12px);animation:fadeUp .8s 2.3s ease forwards}
+  @keyframes fadeUp{to{opacity:1;transform:none}}
+
+  .scrollcue{position:absolute;bottom:1.6rem;left:50%;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:.5rem;color:var(--muted-2);
+    font-family:var(--fd);font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;
+    opacity:0;animation:fadeUp .8s 2.7s ease forwards}
+  .scrollcue .mouse{width:22px;height:34px;border:1.5px solid rgba(168,85,247,.45);
+    border-radius:12px;position:relative}
+  .scrollcue .mouse::before{content:"";position:absolute;left:50%;top:6px;width:3px;height:7px;
+    border-radius:2px;background:var(--purple);transform:translateX(-50%);
+    animation:wheel 1.6s ease-in-out infinite}
+  @keyframes wheel{0%{opacity:0;transform:translate(-50%,0)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,10px)}}
+
+  .band{padding:clamp(5.5rem,13vw,10rem) 0;position:relative}
+  .section-head{max-width:46ch;margin-bottom:3.6rem}
+  .section-head h2{font-family:var(--fd);font-weight:700;font-size:clamp(2rem,5.4vw,3.2rem);
+    line-height:1.06;margin-top:.9rem;letter-spacing:-.01em}
+  .section-head h2 em{font-style:normal;color:var(--purple)}
+  .section-head p{margin-top:1rem;color:var(--muted);font-size:1.06rem;max-width:44ch}
+
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:1.3rem}
+  .card{position:relative;padding:2.3rem 1.9rem 2rem;border-radius:22px;overflow:hidden;
+    background:linear-gradient(180deg,rgba(168,85,247,.1),rgba(120,60,200,.02));
+    border:1px solid var(--line);backdrop-filter:blur(12px);
+    transform-style:preserve-3d;transition:transform .25s ease,box-shadow .3s,border-color .3s;
+    opacity:0;translate:0 30px}
+  .card.in{animation:cardIn .8s cubic-bezier(.16,1,.3,1) forwards}
+  .card.in:nth-child(2){animation-delay:.12s}
+  .card.in:nth-child(3){animation-delay:.24s}
+  @keyframes cardIn{to{opacity:1;translate:0 0}}
+  .card::before{content:"";position:absolute;inset:0;border-radius:22px;padding:1px;
+    background:linear-gradient(140deg,rgba(210,75,255,.65),transparent 42%,transparent 70%,rgba(109,59,255,.55));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .3s}
+  .card:hover{border-color:transparent;box-shadow:0 34px 66px -30px rgba(168,85,247,.65)}
+  .card:hover::before{opacity:1}
+  .card .ico{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;
+    background:radial-gradient(circle at 30% 25%,rgba(210,75,255,.3),rgba(109,59,255,.12));
+    border:1px solid rgba(168,85,247,.3);margin-bottom:1.4rem;
+    box-shadow:0 0 32px -6px rgba(168,85,247,.55)}
+  .card .ico svg{width:28px;height:28px;stroke:#ecdcff}
+  .card h3{font-family:var(--fd);font-weight:600;font-size:1.3rem;margin-bottom:.6rem}
+  .card p{color:var(--muted);font-size:.98rem}
+  .card .num{position:absolute;top:1.5rem;right:1.6rem;font-family:var(--fd);
+    font-size:.72rem;letter-spacing:.2em;color:var(--muted-2)}
+
+  .stats{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;margin-top:4rem}
+  .stat{flex:1 1 180px;max-width:240px;text-align:center;padding:1.6rem 1rem;border-radius:18px;
+    background:rgba(168,85,247,.05);border:1px solid var(--line)}
+  .stat .n{font-family:var(--fd);font-weight:700;font-size:clamp(1.8rem,4vw,2.4rem);
+    background:linear-gradient(180deg,#fff,#b98bff);-webkit-background-clip:text;
+    background-clip:text;color:transparent}
+  .stat .l{color:var(--muted-2);font-size:.82rem;font-family:var(--fd);letter-spacing:.08em;
+    text-transform:uppercase;margin-top:.3rem}
+
+  .founder-band{padding:clamp(4rem,10vw,7rem) 0}
+  .founder{display:flex;align-items:center;gap:2.4rem;flex-wrap:wrap;padding:2.6rem;border-radius:26px;
+    background:linear-gradient(120deg,rgba(168,85,247,.11),rgba(109,59,255,.03));
+    border:1px solid var(--line);backdrop-filter:blur(12px)}
+  .founder-badge{flex:0 0 auto;width:120px;height:120px;border-radius:50%;display:grid;place-items:center;
+    position:relative;font-family:var(--fd);font-weight:700;font-size:2.4rem;color:#fff;
+    background:radial-gradient(circle at 35% 30%,rgba(210,75,255,.38),rgba(109,59,255,.1));
+    border:1px solid rgba(168,85,247,.4);box-shadow:0 0 54px -10px rgba(168,85,247,.75);
+    text-shadow:0 0 20px rgba(210,75,255,.8)}
+  .founder-badge::after{content:"";position:absolute;inset:-6px;border-radius:50%;
+    border:1px solid rgba(168,85,247,.22);animation:pulse 3s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.09);opacity:.2}}
+  .founder-info h3{font-family:var(--fd);font-weight:700;font-size:1.85rem;margin:.4rem 0 .4rem}
+  .founder-info .role{color:var(--purple);font-weight:500;font-family:var(--fd);
+    font-size:.95rem;letter-spacing:.02em;margin-bottom:.7rem}
+  .founder-info p{color:var(--muted);max-width:48ch}
+
+  .download-band{padding:clamp(5rem,12vw,8rem) 0;text-align:center}
+  .download-card{max-width:740px;margin-inline:auto;padding:clamp(2.6rem,6vw,4.2rem) 2rem;
+    border-radius:30px;position:relative;overflow:hidden;
+    background:linear-gradient(160deg,rgba(168,85,247,.16),rgba(109,59,255,.04));
+    border:1px solid rgba(168,85,247,.26);backdrop-filter:blur(14px);
+    box-shadow:0 44px 100px -44px rgba(168,85,247,.55)}
+  .download-card h2{font-family:var(--fd);font-weight:700;font-size:clamp(1.9rem,5vw,2.9rem);
+    line-height:1.08;margin-bottom:1rem}
+  .download-card p{color:var(--muted);max-width:40ch;margin:0 auto 2rem}
+  .platform-row{display:flex;gap:1.2rem;justify-content:center;flex-wrap:wrap;margin-top:1.7rem;
+    color:var(--muted-2);font-size:.82rem;font-family:var(--fd);letter-spacing:.04em}
+  .platform-row span{display:inline-flex;align-items:center;gap:.4rem}
+  .platform-row svg{width:15px;height:15px;stroke:var(--muted-2)}
+
+  footer{padding:3.5rem 0 4rem;border-top:1px solid var(--line);text-align:center;position:relative}
+  .foot-logo{width:46px;margin:0 auto 1.2rem;opacity:.9}
+  .foot-logo svg{width:100%;height:auto;overflow:visible}
+  footer .made{color:var(--muted-2);font-size:.86rem}
+  footer .made b{color:var(--muted);font-weight:600}
+  footer .links{margin-top:1rem;font-size:.82rem;color:var(--muted-2);font-family:var(--fd);letter-spacing:.06em}
+
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .8s cubic-bezier(.16,1,.3,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  @media (max-width:760px){
+    .logo-space{height:40vh;min-height:260px}
+    .features{grid-template-columns:1fr;gap:1rem}
+    .founder{flex-direction:column;text-align:center;padding:2rem 1.5rem}
+    .founder-info p{margin-inline:auto}
+    .cursor-glow{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+    .wordmark b,.beta-pill,.tagline,.hero-cta,.cta-meta,.scrollcue,.card{opacity:1!important;transform:none!important;translate:0 0!important}
+  }
+  /* ---- OPENING SCENE ---- */
+  #intro{position:fixed;inset:0;z-index:60;overflow:hidden;
+    background:radial-gradient(ellipse at 50% 50%,#0b0418,#04010a 72%);
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity .9s ease, transform 1.1s cubic-bezier(.7,0,.2,1)}
+  body.launched #intro{opacity:0;transform:scale(1.18);pointer-events:none}
+  .intro-lines{position:absolute;inset:0;overflow:hidden}
+  .intro-lines i{position:absolute;left:-40%;width:180%;height:1px;opacity:0;transform:translateX(-30%);
+    background:linear-gradient(90deg,transparent,rgba(214,120,255,.75),transparent)}
+  .intro-lines i:nth-child(1){top:33%;animation:sweep 1.7s .10s ease forwards}
+  .intro-lines i:nth-child(2){top:50%;height:2px;animation:sweep 1.7s .25s ease forwards}
+  .intro-lines i:nth-child(3){top:67%;animation:sweep 1.7s .40s ease forwards}
+  .intro-lines i:nth-child(4){top:41%;animation:sweep 2.0s .55s ease forwards}
+  .intro-lines i:nth-child(5){top:59%;animation:sweep 2.0s .70s ease forwards}
+  @keyframes sweep{0%{opacity:0;transform:translateX(-30%)}18%{opacity:1}100%{opacity:0;transform:translateX(30%)}}
+  .intro-core{position:relative;text-align:center;z-index:2;padding:0 1rem}
+  .intro-kicker{font-family:var(--fd);font-size:.7rem;letter-spacing:.5em;color:var(--purple);
+    text-transform:uppercase;opacity:0;animation:ikick .8s .6s ease forwards}
+  @keyframes ikick{to{opacity:1}}
+  .intro-title{font-family:var(--fw);font-weight:800;line-height:1.02;margin:.9rem 0;
+    font-size:clamp(2.2rem,11vw,6rem);letter-spacing:.01em;
+    filter:drop-shadow(0 0 22px rgba(206,120,255,.6)) drop-shadow(0 0 55px rgba(124,58,237,.45))}
+  .intro-title span{display:block;overflow:hidden;padding:.04em 0}
+  .intro-title span b{display:block;font-weight:800;transform:translateY(112%);opacity:0;
+    color:#fff;background:linear-gradient(180deg,#ffffff 0%,#f3ccff 36%,#cf86ff 70%,#a557f5 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .intro-title .w1 b{animation:irise .95s .95s cubic-bezier(.16,1,.3,1) forwards}
+  .intro-title .w2 b{animation:irise .95s 1.12s cubic-bezier(.16,1,.3,1) forwards}
+  @keyframes irise{to{transform:translateY(0);opacity:1}}
+  .intro-sub{font-family:var(--fd);font-weight:600;font-size:clamp(.78rem,2.6vw,1.1rem);
+    letter-spacing:.26em;text-transform:uppercase;color:#ecdcff;opacity:0;transform:translateY(10px);
+    animation:isub .8s 1.75s ease forwards}
+  .intro-sub .live{color:var(--magenta)}
+  @keyframes isub{to{opacity:1;transform:none}}
+  .intro-flash{position:absolute;inset:0;pointer-events:none;opacity:0;
+    background:radial-gradient(circle at 50% 50%,rgba(224,150,255,.9),transparent 62%);
+    animation:iflash 1s 2.35s ease}
+  @keyframes iflash{0%{opacity:0}25%{opacity:.5}100%{opacity:0}}
+
+  /* hero intro animations wait for the opening scene to finish */
+  .hero .beta-pill,.hero .wordmark b,.hero .tagline,.hero .hero-cta,.hero .cta-meta,.hero .scrollcue{animation-play-state:paused}
+  body.launched .hero .beta-pill,body.launched .hero .wordmark b,body.launched .hero .tagline,
+  body.launched .hero .hero-cta,body.launched .hero .cta-meta,body.launched .hero .scrollcue{animation-play-state:running}
+
+  .svgdefs{position:absolute;width:0;height:0;overflow:hidden}
+</style>
+</head>
+<body>
+
+<canvas id="gl"></canvas>
+<div class="vignette"></div>
+<div class="cursor-glow" id="cglow"></div>
+
+<div id="intro" aria-hidden="true">
+  <div class="intro-lines"><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="intro-core">
+    <div class="intro-kicker">Introducing</div>
+    <div class="intro-title"><span class="w1"><b>CAMPUS</b></span><span class="w2"><b>CHAT</b></span></div>
+    <div class="intro-sub">Is now <span class="live">live</span> · Beta v2.0</div>
+  </div>
+  <div class="intro-flash"></div>
+</div>
+
+<svg class="svgdefs" aria-hidden="true"><defs>
+  <linearGradient id="arcGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#e05cff"/><stop offset="45%" stop-color="#b45cf7"/><stop offset="100%" stop-color="#6d3bff"/>
+  </linearGradient>
+  <filter id="neon" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs></svg>
+
+<script id="markTpl" type="text/template">
+  <svg viewBox="0 0 500 500"><g filter="url(#neon)">
+    <path fill="none" stroke="url(#arcGrad)" stroke-linecap="round" stroke-width="33" d="M360.8 391.8 A180 180 0 1 1 360.8 108.2"/>
+    <path fill="none" stroke="url(#arcGrad)" stroke-linecap="round" stroke-width="30" d="M313.6 351.8 A120 120 0 1 1 313.6 148.2"/>
+    <path fill="none" stroke="url(#arcGrad)" stroke-linecap="round" stroke-width="26" d="M278.1 307.5 A64 64 0 1 1 278.1 192.5"/>
+  </g></svg>
+</script>
+
+<div class="content">
+  <nav id="nav">
+    <div class="brand"><span id="navmark"></span> Campus Chat <span class="tag">BETA</span></div>
+    <a class="nav-dl" href="https://github.com/Siddhart111/Campus-Chat-2.0/releases/download/CampusChat_v2.0/Campus.Chat.v2.0.apk">Download</a>
+  </nav>
+
+  <header class="hero">
+    <div class="logo-space"><div class="fallback-logo" id="fallbackLogo"></div></div>
+    <div class="beta-pill"><span class="dot"></span> Beta&nbsp;·&nbsp;v2.0 Now Live</div>
+    <h1 class="wordmark"><span class="l1"><b>CAMPUS</b></span><span class="l2"><b>CHAT</b></span></h1>
+    <p class="tagline">Talk <span class="hl">anonymously</span>. Make friends. Connect your <span class="hl">campus</span>.</p>
+    <div class="hero-cta">
+      <a class="cta" href="https://github.com/Siddhart111/Campus-Chat-2.0/releases/download/CampusChat_v2.0/Campus.Chat.v2.0.apk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
+        Download Now
+      </a>
+    </div>
+    <div class="cta-meta">Android APK&nbsp;·&nbsp;Free&nbsp;·&nbsp;v2.0 Beta</div>
+    <div class="scrollcue"><div class="mouse"></div>Scroll</div>
+  </header>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Why Campus Chat</span>
+        <h2>Your campus, <em>unfiltered</em> — and finally yours.</h2>
+        <p>No feeds full of strangers. No pressure to perform. Just the people around you, and the freedom to actually be real.</p>
+      </div>
+      <div class="features">
+        <article class="card"><span class="num">01</span>
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 0-5 5v3a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/></svg></div>
+          <h3>Talk Anonymously</h3>
+          <p>No real names, no clout, no judgment. Say what you actually think behind a handle that's yours alone — and speak freely.</p>
+        </article>
+        <article class="card"><span class="num">02</span>
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <h3>Make Friends</h3>
+          <p>Match with people who just get it. Start conversations that go somewhere real — from a random chat to your next close friend.</p>
+        </article>
+        <article class="card"><span class="num">03</span>
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Connect Your Campus</h3>
+          <p>Step into your college's own private space — confessions, live chats, and the daily pulse of student life, all in one place.</p>
+        </article>
+      </div>
+      <div class="stats reveal">
+        <div class="stat"><div class="n">100%</div><div class="l">Anonymous</div></div>
+        <div class="stat"><div class="n">1-tap</div><div class="l">To Join</div></div>
+        <div class="stat"><div class="n">v2.0</div><div class="l">Beta Live</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="founder-band">
+    <div class="wrap">
+      <div class="founder reveal">
+        <div class="founder-badge">SN</div>
+        <div class="founder-info">
+          <span class="eyebrow">Founder</span>
+          <h3>Siddharth Nishad</h3>
+          <div class="role">Creator of Campus Chat</div>
+          <p>Built for students, by a student — Campus Chat started with one idea: give every campus a place that actually belongs to the people on it. This is only the beginning.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="download-band" id="download">
+    <div class="wrap">
+      <div class="download-card reveal">
+        <span class="eyebrow">Get the app</span>
+        <h2>Ready to join your campus?</h2>
+        <p>Grab the beta now and be one of the first inside. It's free.</p>
+        <a class="cta" href="https://github.com/Siddhart111/Campus-Chat-2.0/releases/download/CampusChat_v2.0/Campus.Chat.v2.0.apk">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download Now
+        </a>
+        <div class="platform-row">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg> Android APK</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Beta v2.0</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/></svg> Free forever</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot-logo" id="footmark"></div>
+      <p class="made">Campus Chat — made by <b>Siddharth Nishad</b></p>
+      <p class="links">A NOOBI PROJECT · noobi.in</p>
+    </div>
+  </footer>
+</div>
+
+<script>
+  const tpl=document.getElementById('markTpl').innerHTML;
+  document.getElementById('navmark').innerHTML=tpl;
+  document.getElementById('footmark').innerHTML=tpl;
+  document.getElementById('fallbackLogo').innerHTML=tpl;
+
+  // ---- opening scene → reveal ----
+  (function(){
+    let done=false;
+    function launch(){
+      if(done)return; done=true;
+      document.body.classList.add('launched');
+      window.dispatchEvent(new Event('cc-launch'));
+      setTimeout(()=>{const i=document.getElementById('intro');if(i)i.remove();},1300);
+    }
+    if(matchMedia('(prefers-reduced-motion:reduce)').matches){ launch(); return; }
+    window.addEventListener('load',()=>setTimeout(launch,3300));
+    setTimeout(launch,5200); // safety if load is slow
+  })();
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+  const nav=document.getElementById('nav');
+  addEventListener('scroll',()=>{ nav.classList.toggle('scrolled', scrollY>60); });
+  const cg=document.getElementById('cglow');
+  addEventListener('pointermove',e=>{ cg.style.left=e.clientX+'px'; cg.style.top=e.clientY+'px'; });
+
+  const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.18});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+  const fio=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){document.querySelectorAll('.card').forEach(c=>c.classList.add('in'));fio.disconnect();}})},{threshold:.22});
+  const feat=document.querySelector('.features'); if(feat) fio.observe(feat);
+
+  document.querySelectorAll('.card').forEach(card=>{
+    card.addEventListener('pointermove',ev=>{const r=card.getBoundingClientRect();
+      const x=(ev.clientX-r.left)/r.width-.5,y=(ev.clientY-r.top)/r.height-.5;
+      card.style.transform=`perspective(800px) rotateX(${-y*8}deg) rotateY(${x*10}deg) translateZ(6px)`;});
+    card.addEventListener('pointerleave',()=>card.style.transform='');
+  });
+
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  (async ()=>{
+    if(reduce){ document.body.classList.add('no3d'); return; }
+    let THREE, EffectComposer, RenderPass, UnrealBloomPass, OutputPass;
+    try{
+      THREE = await import('three');
+      ({ EffectComposer } = await import('three/addons/postprocessing/EffectComposer.js'));
+      ({ RenderPass } = await import('three/addons/postprocessing/RenderPass.js'));
+      ({ UnrealBloomPass } = await import('three/addons/postprocessing/UnrealBloomPass.js'));
+      ({ OutputPass } = await import('three/addons/postprocessing/OutputPass.js'));
+    }catch(err){ console.warn('3D failed to load',err); document.body.classList.add('no3d'); return; }
+
+    const canvas=document.getElementById('gl');
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
+    const isMobile=innerWidth<760;
+    renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile?1.6:2));
+    renderer.setSize(innerWidth,innerHeight);
+    renderer.toneMapping=THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure=1.0;
+
+    const scene=new THREE.Scene();
+    scene.fog=new THREE.FogExp2(0x04010a, 0.036);
+    const camera=new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 200);
+    camera.position.set(0,0,6.4);
+
+    const C={magenta:new THREE.Color(0xe05cff),mid:new THREE.Color(0xb45cf7),violet:new THREE.Color(0x6d3bff)};
+
+    // ---- environment map: gives the tubes something glossy to reflect ----
+    function envTex(){
+      const c=document.createElement('canvas');c.width=512;c.height=256;const g=c.getContext('2d');
+      const grd=g.createLinearGradient(0,0,0,256);
+      grd.addColorStop(0,'#0a0216');grd.addColorStop(.5,'#3a1060');grd.addColorStop(.72,'#a03cf0');grd.addColorStop(1,'#12021f');
+      g.fillStyle=grd;g.fillRect(0,0,512,256);
+      const blob=(x,y,r,col)=>{const rg=g.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,col);rg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=rg;g.fillRect(0,0,512,256);};
+      blob(140,80,150,'rgba(255,130,255,.95)');blob(380,150,150,'rgba(130,120,255,.85)');blob(260,40,90,'rgba(255,255,255,.7)');
+      const t=new THREE.CanvasTexture(c);t.mapping=THREE.EquirectangularReflectionMapping;t.colorSpace=THREE.SRGBColorSpace;return t;
+    }
+    scene.environment=envTex();
+
+    // ---- lights: create the specular streak that travels along each tube ----
+    scene.add(new THREE.AmbientLight(0x6a2a9a, 0.6));
+    const keyLight=new THREE.PointLight(0xff6cf0, 3.2, 40, 1.6); keyLight.position.set(-4,4.5,5); scene.add(keyLight);
+    const fillLight=new THREE.PointLight(0x6d7cff, 2.6, 40, 1.6); fillLight.position.set(4,-2,5); scene.add(fillLight);
+    const rimLight=new THREE.PointLight(0xffffff, 2.0, 40, 1.6); scene.add(rimLight); // orbits in loop
+
+    function glowTex(){
+      const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+      const gr=g.createRadialGradient(32,32,0,32,32,32);
+      gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.25,'rgba(224,170,255,.9)');
+      gr.addColorStop(.55,'rgba(168,85,247,.32)');gr.addColorStop(1,'rgba(168,85,247,0)');
+      g.fillStyle=gr;g.fillRect(0,0,64,64);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
+    }
+    const spriteTex=glowTex();
+
+    // ===== 3D LOGO: three partial-torus arcs =====
+    const logo=new THREE.Group(); scene.add(logo);
+    const arcMeshes=[];
+    const arcSpecs=[{r:1.6,tube:0.135,gap:0.9},{r:1.05,tube:0.115,gap:1.15},{r:0.55,tube:0.1,gap:1.5}];
+    const arcMats=[];
+    const capMats=[];
+    const gradCol=(t)=>{const c=new THREE.Color();if(t>.5)c.copy(C.mid).lerp(C.magenta,(t-.5)*2);else c.copy(C.violet).lerp(C.mid,t*2);return c;};
+    arcSpecs.forEach((s)=>{
+      const arc=Math.PI*2 - s.gap;
+      const geo=new THREE.TorusGeometry(s.r, s.tube, 40, 320, arc);   // smoother, rounder tube
+      const pos=geo.attributes.position, n=pos.count, col=new Float32Array(n*3);
+      let minY=Infinity,maxY=-Infinity;
+      for(let k=0;k<n;k++){const y=pos.getY(k);if(y<minY)minY=y;if(y>maxY)maxY=y;}
+      const tmp=new THREE.Color();
+      for(let k=0;k<n;k++){
+        const t=(pos.getY(k)-minY)/(maxY-minY);
+        if(t>.5) tmp.copy(C.mid).lerp(C.magenta,(t-.5)*2);
+        else     tmp.copy(C.violet).lerp(C.mid,t*2);
+        col[k*3]=tmp.r;col[k*3+1]=tmp.g;col[k*3+2]=tmp.b;
+      }
+      geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+      // glossy neon-glass: lit diffuse gradient + emissive gradient glow + clearcoat sheen
+      const mat=new THREE.MeshPhysicalMaterial({
+        vertexColors:true, color:0x2a0838,
+        emissive:0xffffff, emissiveIntensity:0.9,
+        metalness:0.35, roughness:0.28,
+        clearcoat:1.0, clearcoatRoughness:0.22,
+        envMapIntensity:1.1, toneMapped:true
+      });
+      mat.onBeforeCompile=(sh)=>{         // make the emissive glow follow the colour gradient
+        sh.fragmentShader=sh.fragmentShader.replace(
+          'vec3 totalEmissiveRadiance = emissive;',
+          'vec3 totalEmissiveRadiance = emissive * vColor;'
+        );
+      };
+      const mesh=new THREE.Mesh(geo, mat);
+      mesh.rotation.z=s.gap/2;
+      mesh.userData.total=geo.index.count;
+      geo.setDrawRange(0,0);
+      // rounded caps close the open tube ends (fixes the "cracked" edges)
+      const capGeo=new THREE.SphereGeometry(s.tube, 20, 16);
+      const s2=Math.sin(s.gap/2);
+      const mkCap=(ang,tcol)=>{
+        const cm=new THREE.MeshPhysicalMaterial({color:0x2a0838,emissive:gradCol(tcol),emissiveIntensity:0.9,
+          metalness:0.35,roughness:0.28,clearcoat:1.0,clearcoatRoughness:0.22,envMapIntensity:1.1,toneMapped:true});
+        const cap=new THREE.Mesh(capGeo,cm);
+        cap.position.set(Math.cos(ang)*s.r, Math.sin(ang)*s.r, 0);
+        mesh.add(cap); capMats.push(cm); return cap;
+      };
+      mkCap(0,(s2+1)/2);                        // start cap (top) — always visible, tube grows from here
+      mesh.userData.endCap=mkCap(arc,(-s2+1)/2);// end cap (bottom) — revealed when the arc finishes
+      logo.add(mesh); arcMeshes.push(mesh); arcMats.push(mat);
+    });
+    logo.scale.setScalar(1.15); logo.position.y=0.05;
+
+    const core=new THREE.Sprite(new THREE.SpriteMaterial({map:spriteTex,color:0xb060ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+    core.scale.setScalar(4.6); core.position.z=-.5; logo.add(core);
+    const haze=new THREE.Sprite(new THREE.SpriteMaterial({map:spriteTex,color:0x7a3cff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+    haze.scale.setScalar(8.5); haze.position.z=-.9; logo.add(haze);
+
+    // ---- moving line-rings + radial rays behind the C (motion & texture) ----
+    const ringLines=[];
+    for(let i=0;i<5;i++){
+      const r=1.95+i*0.5, seg=200, pts=[];
+      for(let a=0;a<=seg;a++){const th=a/seg*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(th)*r,Math.sin(th)*r,0));}
+      const g=new THREE.BufferGeometry().setFromPoints(pts);
+      const col=new THREE.Color().lerpColors(C.violet,C.magenta,i/4);
+      const line=new THREE.LineLoop(g,new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+      line.position.z=-0.75; line.userData.spin=(i%2?-1:1)*(0.12+i*0.05);
+      logo.add(line); ringLines.push(line);
+    }
+    const rayPts=[], RN=52;
+    for(let k=0;k<RN;k++){const th=k/RN*Math.PI*2;
+      rayPts.push(new THREE.Vector3(Math.cos(th)*2.0,Math.sin(th)*2.0,0),new THREE.Vector3(Math.cos(th)*4.7,Math.sin(th)*4.7,0));}
+    const rays=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(rayPts),
+      new THREE.LineBasicMaterial({color:0x9a54ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+    rays.position.z=-0.95; logo.add(rays);
+
+    // ---- mystic nebula: big soft drifting clouds of light, far back ----
+    const neb=[];
+    [{c:0x6d3bff,x:-6,y:2,z:-11,s:24,o:0.11},{c:0xe05cff,x:7,y:-3,z:-13,s:28,o:0.10},
+     {c:0x3a1e8a,x:0,y:5,z:-16,s:34,o:0.09},{c:0x9a3cff,x:-3,y:-5,z:-14,s:26,o:0.08}].forEach((d)=>{
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:spriteTex,color:d.c,transparent:true,opacity:d.o,blending:THREE.AdditiveBlending,depthWrite:false}));
+      sp.scale.setScalar(d.s); sp.position.set(d.x,d.y,d.z); sp.userData=d; scene.add(sp); neb.push(sp);
+    });
+
+    // ===== GRID FLOOR =====
+    const gridMat=new THREE.ShaderMaterial({
+      transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+      uniforms:{uTime:{value:0}},
+      vertexShader:`varying vec2 vUv;varying float vFade;uniform float uTime;
+        void main(){vUv=uv;vec3 p=position;
+          float w=sin(p.x*0.14+uTime*0.7)*cos(p.y*0.14+uTime*0.5);p.z+=w*1.4;
+          vFade=1.0-smoothstep(28.0,120.0,length(position.xy));
+          gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}`,
+      fragmentShader:`varying vec2 vUv;varying float vFade;
+        void main(){vec2 c=vUv*46.0;vec2 g=abs(fract(c-0.5)-0.5)/fwidth(c);
+          float line=min(g.x,g.y);float m=1.0-min(line,1.0);
+          vec3 col=mix(vec3(0.32,0.10,0.62),vec3(0.72,0.34,1.0),vUv.y);
+          gl_FragColor=vec4(col*(0.5+m*0.9), m*vFade*0.6);}`
+    });
+    const grid=new THREE.Mesh(new THREE.PlaneGeometry(260,260,120,120),gridMat);
+    grid.rotation.x=-Math.PI/2; grid.position.y=-3.6; grid.position.z=-6; scene.add(grid);
+
+    // ===== PARTICLES =====
+    function pLayer(count,spread,size,opacity){
+      const geo=new THREE.BufferGeometry(),pos=new Float32Array(count*3),col=new Float32Array(count*3);
+      const pal=[C.magenta,C.mid,C.violet,new THREE.Color(0xffffff)];
+      for(let i=0;i<count;i++){
+        pos[i*3]=(Math.random()-.5)*spread;pos[i*3+1]=(Math.random()-.5)*spread;pos[i*3+2]=(Math.random()-.5)*spread;
+        const c=pal[(Math.random()*pal.length)|0];col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b;
+      }
+      geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+      geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+      const pts=new THREE.Points(geo,new THREE.PointsMaterial({size,map:spriteTex,vertexColors:true,
+        transparent:true,opacity,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true}));
+      scene.add(pts);return pts;
+    }
+    const far=pLayer(isMobile?800:1500,60,.34,.6);
+    const mid=pLayer(isMobile?300:560,34,.6,.85);
+    const near=pLayer(isMobile?60:110,24,1.15,.9);
+
+    // ===== BLOOM =====
+    const composer=new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene,camera));
+    composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),isMobile?0.7:0.9,0.85,0.34));
+    composer.addPass(new OutputPass());
+    composer.setPixelRatio(renderer.getPixelRatio());
+    composer.setSize(innerWidth,innerHeight);
+
+    // ===== interaction =====
+    let tx=0,ty=0,cx=0,cy=0;
+    addEventListener('pointermove',e=>{tx=(e.clientX/innerWidth-.5);ty=(e.clientY/innerHeight-.5);});
+    function enableGyro(){addEventListener('deviceorientation',e=>{if(e.gamma==null)return;
+      tx=Math.max(-1,Math.min(1,e.gamma/40));ty=Math.max(-1,Math.min(1,(e.beta-45)/40));});}
+    if(typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission){
+      addEventListener('touchend',()=>{DeviceOrientationEvent.requestPermission().then(s=>{if(s==='granted')enableGyro();}).catch(()=>{});},{once:true});
+    }else if(typeof DeviceOrientationEvent!=='undefined'){enableGyro();}
+    let scrollY0=0; addEventListener('scroll',()=>scrollY0=window.scrollY,{passive:true});
+
+    // the 3D logo reveal waits for the opening scene to finish
+    let heroT0=null;
+    addEventListener('cc-launch',()=>{ if(heroT0===null) heroT0=performance.now(); });
+
+    canvas.classList.add('ready');
+    const t0=performance.now(); let running=true;
+    document.addEventListener('visibilitychange',()=>{running=!document.hidden;if(running){clock.getDelta();loop();}});
+    const clock=new THREE.Clock();
+
+    // frame-rate-independent exponential damping (the key to smoothness)
+    const damp=(cur,target,lambda,dt)=>cur+(target-cur)*(1-Math.exp(-lambda*dt));
+    const smoothstep=x=>x*x*(3-2*x);
+    const easeOutExpo=x=>x>=1?1:1-Math.pow(2,-10*x);
+
+    let sScroll=0;                 // smoothed scroll position
+    const CELL=260/46;             // grid cell world size → seamless wrap
+
+    function loop(){
+      if(!running)return;
+      requestAnimationFrame(loop);
+      const dt=Math.min(clock.getDelta(),0.05);
+      const t=clock.getElapsedTime();
+      const launched = heroT0!==null;
+      const el = launched ? (performance.now()-heroT0)/1000 : 0;
+
+      // logo assembly — arcs draw in with easeOutExpo (silky finish)
+      arcMeshes.forEach((m,i)=>{
+        const start=0.25+i*0.26, dur=1.3;
+        let p=(el-start)/dur; p=Math.max(0,Math.min(1,p)); p=easeOutExpo(p);
+        m.geometry.setDrawRange(0, Math.floor(p*m.userData.total));
+        if(m.userData.endCap) m.userData.endCap.visible = p>0.985;  // rounded end appears once drawn
+      });
+      core.material.opacity=damp(core.material.opacity, launched&&el>0.6?0.28:0, 2.2, dt);
+      haze.material.opacity=damp(haze.material.opacity, launched&&el>0.6?0.16:0, 1.8, dt);
+
+      // moving rings + rays behind the C
+      ringLines.forEach((line)=>{ line.material.opacity=damp(line.material.opacity, launched&&el>0.5?0.3:0, 1.6, dt); line.rotation.z+=line.userData.spin*dt; });
+      rays.material.opacity=damp(rays.material.opacity, launched&&el>0.7?0.13:0, 1.4, dt); rays.rotation.z-=0.06*dt;
+
+      // travelling highlight: orbit the white rim light around the logo
+      rimLight.position.set(Math.cos(t*0.8)*5, Math.sin(t*0.6)*3+1, 4.5+Math.sin(t*0.4)*1.5);
+      // gentle emissive "breathing" so the neon feels alive
+      const pulse=0.9 + Math.sin(t*1.4)*0.14;
+      arcMats.forEach(m=>{ m.emissiveIntensity=pulse; });
+      capMats.forEach(m=>{ m.emissiveIntensity=pulse; });
+
+      // mystic drift + shimmer
+      neb.forEach((sp,i)=>{ const d=sp.userData;
+        sp.position.x=d.x+Math.sin(t*0.06+i*1.7)*1.8;
+        sp.position.y=d.y+Math.cos(t*0.05+i*2.1)*1.2;
+        sp.material.rotation=t*0.03*(i%2?1:-1);
+        sp.material.opacity=d.o*(0.8+Math.sin(t*0.4+i)*0.2);
+      });
+      near.material.opacity=0.9+Math.sin(t*2.0)*0.08;
+      mid.material.opacity=0.85+Math.sin(t*1.3+1)*0.06;
+
+      // intro settle: logo materialises small+tilted, eases into rest (~2.4s)
+      const intro=easeOutExpo(Math.min(1, el/2.4));
+      const introTilt=(1-intro)*0.55;
+      const introScale=0.85 + 0.30*intro;
+
+      // damp everything toward targets — this removes all the jank
+      sScroll=damp(sScroll, scrollY0, 7, dt);
+      cx=damp(cx, tx, 5, dt);
+      cy=damp(cy, ty, 5, dt);
+
+      const s01=smoothstep(Math.min(1, sScroll/innerHeight));
+
+      logo.rotation.y=cx*0.55 + t*0.1 + introTilt;
+      logo.rotation.x=cy*0.38 + Math.sin(t*0.6)*0.05 - introTilt*0.6;
+      logo.position.y=0.05 + Math.sin(t*0.9)*0.09 - s01*1.4;
+      logo.position.z=-s01*3.5;
+      logo.scale.setScalar(introScale*(1 - s01*0.22));
+
+      camera.position.x=cx*1.3;
+      camera.position.y=-cy*0.9 - sScroll*0.0016;
+      camera.position.z=6.4 - s01*2.1;
+      camera.lookAt(0, -sScroll*0.0016, -s01*2);
+
+      grid.material.uniforms.uTime.value=t;
+      grid.position.z=-6 + ((t*1.1 + sScroll*0.006) % CELL);  // seamless, no pop
+
+      far.rotation.y=t*0.01; mid.rotation.y=-t*0.018; near.rotation.y=t*0.028; mid.rotation.x=t*0.008;
+
+      composer.render();
+    }
+    clock.getDelta(); loop();
+
+    addEventListener('resize',()=>{
+      const m=innerWidth<760;
+      camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio,m?1.6:2));
+    });
+  })();
+</script>
+</body>
+</html>
